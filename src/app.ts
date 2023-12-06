@@ -28,7 +28,6 @@ app.use(errors());
 
 app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
     if (err instanceof mongoose.Error.CastError) {
-        // Handle this error
         res.status(400).send({ message: 'Cущности с таким id не существует' });
     }
 
