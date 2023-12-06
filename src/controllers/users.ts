@@ -1,22 +1,18 @@
 import { Request, Response, NextFunction } from 'express';
 import { celebrate, Joi } from 'celebrate';
+import { constants } from 'http2';
 import User from '../models/user';
 import NotFoundError from '../errors';
 
 export const getUsers = async (_req: Request, res: Response) => {
   const users = await User.find({});
-  res.status(200).send(users);
+  res.status(constants.HTTP_STATUS_OK).send(users);
 };
 
-export const getUser = async (req: Request, res: Response, next: NextFunction) => {
-  const user = await User.findById(req.params.id);
+export const getUser = async (req: Request, res: Response) => {
+  const user = await User.findById(req.params.id).orFail(() => new NotFoundError('Нет пользователя с таким id'));
 
-  if (!user) {
-    next(new NotFoundError('Нет пользователя с таким id'));
-    return;
-  }
-
-  res.status(200).send(user);
+  res.status(constants.HTTP_STATUS_OK).send(user);
 };
 
 export const validateCreateUser = celebrate({
@@ -30,7 +26,7 @@ export const validateCreateUser = celebrate({
 export const createUser = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const newUser = await User.create(req.body);
-    res.status(201).send(newUser);
+    res.status(constants.HTTP_STATUS_CREATED).send(newUser);
   } catch (error) {
     next(error);
   }
@@ -46,14 +42,12 @@ export const validateUpdateUser = celebrate({
 
 export const updateUser = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const user = await User.findByIdAndUpdate(req.user._id, req.body, { new: true });
+    const user = await User.findByIdAndUpdate(req.user._id, req.body, {
+      new: true,
+      runValidators: true,
+    }).orFail(() => new NotFoundError('Нет пользователя с таким id'));
 
-    if (!user) {
-      next(new NotFoundError('Нет пользователя с таким id'));
-      return;
-    }
-
-    res.status(200).send(user);
+    res.status(constants.HTTP_STATUS_OK).send(user);
   } catch (error) {
     next(error);
   }
@@ -69,14 +63,12 @@ export const updateUserAvatar = async (req: Request, res: Response, next: NextFu
   try {
     const user = await User.findByIdAndUpdate(req.user._id, {
       avatar: req.body.avatar,
-    }, { new: true });
+    }, {
+      new: true,
+      runValidators: true,
+    }).orFail(() => new NotFoundError('Нет пользователя с таким id'));
 
-    if (!user) {
-      next(new NotFoundError('Нет пользователя с таким id'));
-      return;
-    }
-
-    res.status(200).send(user);
+    res.status(constants.HTTP_STATUS_OK).send(user);
   } catch (error) {
     next(error);
   }

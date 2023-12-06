@@ -1,8 +1,8 @@
 import express, { Request, Response, NextFunction } from 'express';
 import { errors } from 'celebrate';
 import mongoose from 'mongoose';
-import cardRouter from './routes/cards';
-import userRouter from './routes/users';
+import { constants } from 'http2'
+import router from './routes';
 
 const { PORT = 3000 } = process.env;
 
@@ -18,22 +18,28 @@ app.use((req: Request, res: Response, next: NextFunction) => {
     };
 
     next();
-  });
+});
 
-app.use('/user', userRouter);
-app.use('/card', cardRouter);
-app.use('*', (req: Request, res: Response) => res.status(404).send());
+app.use('/', router);
+
+app.use('*', (req: Request, res: Response) => res.status(constants.HTTP_STATUS_NOT_FOUND).send({ message: "Эндпойнт не найден" }));
 
 app.use(errors());
 
 app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
     if (err instanceof mongoose.Error.CastError) {
-        res.status(400).send({ message: 'Cущности с таким id не существует' });
+        res.status(constants.HTTP_STATUS_BAD_REQUEST).send({ message: 'Cущности с таким id не существует' });
+        return;
     }
 
-    const { statusCode = 500, message } = err;
+    if (err instanceof mongoose.Error.ValidationError) {
+        res.status(constants.HTTP_STATUS_BAD_REQUEST).send({ message: err.message });
+        return;
+    }
 
-    res.status(statusCode).send({ message: statusCode === 500 ? 'На сервере произошла ошибка' : message });
+    const { statusCode = constants.HTTP_STATUS_INTERNAL_SERVER_ERROR, message } = err;
+
+    res.status(statusCode).send({ message: statusCode === constants.HTTP_STATUS_BAD_REQUEST ? 'На сервере произошла ошибка' : message });
   });
 
 app.listen(PORT, () => {

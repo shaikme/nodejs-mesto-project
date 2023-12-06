@@ -1,17 +1,18 @@
 import { Request, Response, NextFunction } from 'express';
 import { celebrate, Joi } from 'celebrate';
+import { constants } from 'http2';
 import Card from '../models/card';
 import NotFoundError from '../errors';
 
 export const getCards = async (req: Request, res: Response) => {
   const cards = await Card.find({});
-  res.status(200).send(cards);
+  res.status(constants.HTTP_STATUS_OK).send(cards);
 };
 
 export const createCard = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const newCard = await Card.create({ ...req.body, ownerId: req.user._id });
-    res.status(201).send(newCard);
+    res.status(constants.HTTP_STATUS_CREATED).send(newCard);
   } catch (error) {
     next(error);
   }
@@ -28,7 +29,7 @@ export const deleteCard = async (req: Request, res: Response, next: NextFunction
   try {
     await Card.deleteOne({ _id: req.params.cardId });
 
-    res.status(204).send();
+    res.status(constants.HTTP_STATUS_NO_CONTENT).send();
   } catch (error) {
     next(error);
   }
@@ -39,15 +40,10 @@ export const likeCard = async (req: Request, res: Response, next: NextFunction) 
     const card = await Card.findByIdAndUpdate(
       req.params.cardId,
       { $addToSet: { likes: req.user._id } },
-      { new: true },
-    );
+      { new: true, runValidators: true },
+    ).orFail(() => new NotFoundError('Нет карточки с таким id'));
 
-    if (!card) {
-      next(new NotFoundError('Нет карточки с таким id'));
-      return;
-    }
-
-    res.status(200).send(card);
+    res.status(constants.HTTP_STATUS_OK).send(card);
   } catch (error) {
     next(error);
   }
@@ -58,15 +54,10 @@ export const dislikeCard = async (req: Request, res: Response, next: NextFunctio
     const card = await Card.findByIdAndUpdate(
       req.params.cardId,
       { $pull: { likes: req.user._id } },
-      { new: true },
-    );
+      { new: true, runValidators: true },
+    ).orFail(() => new NotFoundError('Нет карточки с таким id'));
 
-    if (!card) {
-      next(new NotFoundError('Нет карточки с таким id'));
-      return;
-    }
-
-    res.status(200).send(card);
+    res.status(constants.HTTP_STATUS_OK).send(card);
   } catch (error) {
     next(error);
   }
