@@ -29,8 +29,9 @@ export const deleteCard = async (req: Request, res: Response, next: NextFunction
   try {
     const card = await Card.findById(req.params.cardId).orFail(() => new NotFoundError('Нет карточки с таким id'));
 
-    if (card.ownerId !== req.user?._id) {
+    if (card.ownerId.toString() !== req.user?._id) {
       next(new ForbiddenError('Вы не можете удалить чужую карточку'));
+      return
     }
 
     await card.deleteOne();
