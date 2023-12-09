@@ -31,7 +31,7 @@ export const deleteCard = async (req: Request, res: Response, next: NextFunction
 
     if (card.ownerId.toString() !== req.user?._id) {
       next(new ForbiddenError('Вы не можете удалить чужую карточку'));
-      return
+      return;
     }
 
     await card.deleteOne();
