@@ -4,7 +4,7 @@ declare global {
     // eslint-disable-next-line
     namespace Express {
       export interface Request {
-        user: {
+        user?: {
           _id: string
         };
       }

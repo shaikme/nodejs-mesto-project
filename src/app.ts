@@ -2,6 +2,8 @@ import express, { Request, Response, NextFunction } from 'express';
 import { errors } from 'celebrate';
 import mongoose from 'mongoose';
 import { constants } from 'http2'
+import cookieParser from 'cookie-parser';
+import { requestLogger, errorLogger } from './middlewares/logger';
 import router from './routes';
 
 const { PORT = 3000 } = process.env;
@@ -11,18 +13,15 @@ const app = express();
 mongoose.connect('mongodb://localhost:27017/mestodb');
 
 app.use(express.json());
+app.use(cookieParser());
 
-app.use((req: Request, res: Response, next: NextFunction) => {
-    req.user = {
-      _id: '656f7fb31b5abb1d8b86ce3a',
-    };
-
-    next();
-});
+app.use(requestLogger);
 
 app.use('/', router);
 
-app.use('*', (req: Request, res: Response) => res.status(constants.HTTP_STATUS_NOT_FOUND).send({ message: "Эндпойнт не найден" }));
+app.use('*', (_req: Request, res: Response) => res.status(constants.HTTP_STATUS_NOT_FOUND).send({ message: "Эндпойнт не найден" }));
+
+app.use(errorLogger);
 
 app.use(errors());
 

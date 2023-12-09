@@ -5,10 +5,10 @@ import {
 
 const router = Router();
 
-router.get('/', getCards);
-router.post('/', validateCreateCard, createCard);
 router.delete('/:cardId', deleteCard);
 router.put('/:cardId/likes', likeCard);
 router.delete('/:cardId/likes', dislikeCard);
+router.post('/', validateCreateCard, createCard);
+router.get('/', getCards);
 
 export default router;
