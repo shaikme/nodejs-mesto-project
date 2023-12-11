@@ -1,12 +1,15 @@
 import { Request, Response, NextFunction } from 'express';
-import { celebrate, Joi } from 'celebrate';
 import { constants } from 'http2';
 import Card from '../models/card';
 import { NotFoundError, ForbiddenError } from '../errors';
 
-export const getCards = async (req: Request, res: Response) => {
-  const cards = await Card.find({});
-  res.status(constants.HTTP_STATUS_OK).send(cards);
+export const getCards = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const cards = await Card.find({});
+    res.status(constants.HTTP_STATUS_OK).send(cards);
+  } catch (error) {
+    next(error);
+  }
 };
 
 export const createCard = async (req: Request, res: Response, next: NextFunction) => {
@@ -17,13 +20,6 @@ export const createCard = async (req: Request, res: Response, next: NextFunction
     next(error);
   }
 };
-
-export const validateCreateCard = celebrate({
-  body: Joi.object().keys({
-    name: Joi.string().required().min(2).max(30),
-    link: Joi.string().required(),
-  }),
-});
 
 export const deleteCard = async (req: Request, res: Response, next: NextFunction) => {
   try {

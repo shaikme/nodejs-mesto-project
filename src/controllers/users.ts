@@ -1,37 +1,38 @@
 import { Request, Response, NextFunction } from 'express';
-import { celebrate, Joi } from 'celebrate';
 import { constants } from 'http2';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import User from '../models/user';
 import { NotFoundError, UnauthorizedError, ConflictError } from '../errors';
 
-export const getUsers = async (_req: Request, res: Response) => {
-  const users = await User.find({});
-  res.status(constants.HTTP_STATUS_OK).send(users);
+export const getUsers = async (_req: Request, res: Response, next: NextFunction) => {
+  try {
+    const users = await User.find({});
+    res.status(constants.HTTP_STATUS_OK).send(users);
+  } catch (error) {
+    next(error);
+  }
 };
 
-export const getUser = async (req: Request, res: Response) => {
-  const user = await User.findById(req.params.id).orFail(() => new NotFoundError('Нет пользователя с таким id'));
+export const getUser = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const user = await User.findById(req.params.id).orFail(() => new NotFoundError('Нет пользователя с таким id'));
 
-  res.status(constants.HTTP_STATUS_OK).send(user);
+    res.status(constants.HTTP_STATUS_OK).send(user);
+  } catch (error) {
+    next(error);
+  }
 };
 
-export const getСurrentUser = async (req: Request, res: Response) => {
-  const user = await User.findById(req.user?._id).orFail(() => new NotFoundError('Нет пользователя с таким id'));
+export const getСurrentUser = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const user = await User.findById(req.user?._id).orFail(() => new NotFoundError('Нет пользователя с таким id'));
 
-  res.status(constants.HTTP_STATUS_OK).send(user);
+    res.status(constants.HTTP_STATUS_OK).send(user);
+  } catch (error) {
+    next(error);
+  }
 };
-
-export const validateCreateUser = celebrate({
-  body: Joi.object().keys({
-    email: Joi.string().email().required(),
-    password: Joi.string().required(),
-    name: Joi.string().min(2).max(30),
-    avatar: Joi.string(),
-    about: Joi.string().min(2).max(200),
-  }),
-});
 
 export const createUser = async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -52,19 +53,12 @@ export const createUser = async (req: Request, res: Response, next: NextFunction
   } catch (error: any) {
     if (error.code === 11000) {
       next(new ConflictError('Такой email уже занят'));
+      return;
     }
 
     next(error);
   }
 };
-
-export const validateUpdateUser = celebrate({
-  body: Joi.object().keys({
-    name: Joi.string().min(2).max(30),
-    avatar: Joi.string(),
-    about: Joi.string().min(2).max(200),
-  }),
-});
 
 export const updateUser = async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -85,12 +79,6 @@ export const updateUser = async (req: Request, res: Response, next: NextFunction
   }
 };
 
-export const validateUpdateUserAvatar = celebrate({
-  body: Joi.object().keys({
-    avatar: Joi.string().required(),
-  }),
-});
-
 export const updateUserAvatar = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const user = await User.findByIdAndUpdate(req.user?._id, {
@@ -105,13 +93,6 @@ export const updateUserAvatar = async (req: Request, res: Response, next: NextFu
     next(error);
   }
 };
-
-export const validateLoginUser = celebrate({
-  body: Joi.object().keys({
-    email: Joi.string().email().required(),
-    password: Joi.string().required(),
-  }),
-});
 
 export const login = async (req: Request, res: Response, next: NextFunction) => {
   const { email, password } = req.body;

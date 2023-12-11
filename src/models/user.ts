@@ -40,6 +40,6 @@ export const userSchema = new mongoose.Schema({
     maxlength: 200,
     default: 'Исследователь',
   },
-});
+}, { versionKey: false });
 
 export default mongoose.model<IUser>('user', userSchema);
